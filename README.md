@@ -1,8 +1,11 @@
 # About this repository
 To make a system which detect a mount of remaining by foods.
 
-# How to make
-
+# Enviroument
+Ubuntu:16.04
+CUDA:8.0
+CUDNN:6
+Python:Python 3.5.2 :: Anaconda 4.2.0 (64-bit)
 
 # Others
 ## how to use camera module

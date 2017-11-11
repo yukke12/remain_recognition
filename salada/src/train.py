@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*- 
 import os
 import sys
-import numpy as np
-import pandas as pd
-
+import tensorflow as tf
 
 def main():
-    pass
+    a = tf.valiable()
 
 
 if __name__ == '__main__':

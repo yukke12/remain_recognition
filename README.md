@@ -11,6 +11,16 @@ To make a system which detect a mount of remaining by foods.
 vcgencmd get_camera
 ```
 
+### take a photo sample command.
+```
+raspistill -o 100_image-%004d.jpg -tl 3000 -t 60000 -w 640 -h 480
+```
+
+-o : image_name  
+-tl : every mili second(Above command mean every 3 seconds take a photo)  
+-t : all mili second(Above command mean all time is 60 seconds=1 minitus)  
+-w : weigh
+-h : hight
 
 ## About raspberry pi avairable links
 [camera module](https://www.rs-online.com/designspark/raspberry-pi-camera)  

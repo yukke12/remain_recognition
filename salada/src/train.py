@@ -8,6 +8,7 @@ def main():
     config = configparser.ConfigParser()
     config.sections()
     config.read(conf_file)
+    print(config)
     image_conf = config['images']
     print(image_conf['IMAGE_SIZE'])
 

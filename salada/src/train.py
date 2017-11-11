@@ -4,7 +4,7 @@ import sys
 import tensorflow as tf
 
 def main():
-    a = tf.valiable()
+    a = tf.Variable()
 
 
 if __name__ == '__main__':

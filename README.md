@@ -19,7 +19,7 @@ raspistill -o 100_image-%004d.jpg -tl 3000 -t 60000 -w 640 -h 480
 -o : image_name  
 -tl : every mili second(Above command mean every 3 seconds take a photo)  
 -t : all mili second(Above command mean all time is 60 seconds=1 minitus)  
--w : weigh
+-w : weigh  
 -h : hight
 
 ## About raspberry pi avairable links

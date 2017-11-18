@@ -1,5 +1,14 @@
-[images]
+[data]
+TRAIN_LIST_PATH = data/train.txt
+TEST_LIST_PATH = data/test.txt
+VAL_LIST_PATH = data/validation.txt
+DATA_PATH = data/
+
+[image]
 NUM_CLASSES = 4
 IMAGE_SIZE = 224
-IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE * 3
 
+[hyper_parameter]
+LEARNING_RATE = 0.001
+MAX_STEPS = 5
+BATCH_SIZE = 30

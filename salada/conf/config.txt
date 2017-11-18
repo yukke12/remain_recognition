@@ -6,9 +6,9 @@ DATA_PATH = data/
 
 [image]
 NUM_CLASSES = 4
-IMAGE_SIZE = 224
+IMAGE_SIZE = 98
 
 [hyper_parameter]
 LEARNING_RATE = 0.001
-MAX_STEPS = 5
+MAX_STEPS = 10
 BATCH_SIZE = 30

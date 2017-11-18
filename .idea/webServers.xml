@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="5e5543f1-15be-4efa-a28f-953305632917" name="ubuntu_remain" url="http://13.112.16.158">
+        <fileTransfer host="13.112.16.158" port="22" privateKey="$PROJECT_DIR$/../../login_bash/ec2/gpu/gpu_test1.pem" rootFolder="/home/ubuntu" accessType="SFTP" username="ubuntu" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

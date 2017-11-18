@@ -71,71 +71,70 @@ def inference(image_placeholder, keep_prob, resize_size, number_of_classes):
     def conv2d(x, W):
         return (tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME'))
 
-    def max_pool_2x2(x):
-        return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+    def max_pool_3x3(x):
+        return tf.nn.max_pool(x, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
 
     x_image = tf.reshape(image_placeholder, [-1, resize_size[0], resize_size[1], 3])
 
     with tf.name_scope('conv1') as scope:
-        W_conv1 = weight_variable([2, 2, 3, 32], resize_size[0] * resize_size[1])
-        b_conv1 = bias_variable([32])
-        h_conv1 = tf.nn.relu(conv2d_first(x_image, W_conv1) + b_conv1)
+        W_conv1 = weight_variable([11, 11, 3, 96], resize_size[0] * resize_size[1])
+        b_conv1 = bias_variable([96])
+        h_conv1 = tf.nn.relu(conv2d_first(x_image, W_conv1 + b_conv1))
         print(h_conv1)
 
     with tf.name_scope('pool1') as scope:
-        h_pool1 = max_pool_2x2(tf.nn.local_response_normalization(h_conv1))
+        h_pool1 = max_pool_3x3(tf.nn.local_response_normalization(h_conv1))
         print(h_pool1)
 
     with tf.name_scope('conv2') as scope:
-        W_conv2 = weight_variable([2, 2, 32, 64], 96)
-        b_conv2 = bias_variable([64])
-        h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+        W_conv2 = weight_variable([5, 5, 96, 256], 96)
+        b_conv2 = bias_variable([256])
+        h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2 + b_conv2))
         print(h_conv2)
 
     with tf.name_scope('pool2') as scope:
-        h_pool2 = max_pool_2x2(tf.nn.local_response_normalization(h_conv2))
+        h_pool2 = max_pool_3x3(tf.nn.local_response_normalization(h_conv2))
         print(h_pool2)
 
     with tf.name_scope('conv3') as scope:
-        W_conv3 = weight_variable([2, 2, 64, 64], 256)
-        b_conv3 = bias_variable([64])
+        W_conv3 = weight_variable([3, 3, 256, 384], 256)
+        b_conv3 = bias_variable([384])
         h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
         print(h_conv3)
 
     with tf.name_scope('conv4') as scope:
-        W_conv4 = weight_variable([2, 2, 64, 64], 384)
-        b_conv4 = bias_variable([64])
+        W_conv4 = weight_variable([3, 3, 384, 384], 384)
+        b_conv4 = bias_variable([384])
         h_conv4 = tf.nn.relu(conv2d(h_conv3, W_conv4) + b_conv4)
         print(h_conv4)
 
     with tf.name_scope('conv5') as scope:
-        W_conv5 = weight_variable([2, 2, 64, 64], 384)
-        b_conv5 = bias_variable([64])
+        W_conv5 = weight_variable([3, 3, 384, 256], 384)
+        b_conv5 = bias_variable([256])
         h_conv5 = tf.nn.relu(conv2d(h_conv4, W_conv5) + b_conv5)
         print(h_conv5)
 
     with tf.name_scope('pool3') as scope:
-        h_pool3 = max_pool_2x2(h_conv5)
+        h_pool3 = max_pool_3x3(h_conv5)
         print(h_pool3)
 
     with tf.name_scope('fc1') as scope:
-        n = np.prod(h_pool3.get_shape().as_list()[1:])
-        W_fc1 = weight_variable([n, 1024], (7*7*256))
-        b_fc1 = bias_variable([1024])
-        h_pool3_flat = tf.reshape(h_pool3, [-1, n])
+        W_fc1 = weight_variable([7*7*256, 4096], (7*7*256))
+        b_fc1 = bias_variable([4096])
+        h_pool3_flat = tf.reshape(h_pool3, [-1, 7*7*256])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
         h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
     with tf.name_scope('fc2') as scope:
-        W_fc2 = weight_variable([1024,1024], 1024)
-        b_fc2 = bias_variable([1024])
-        h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+        w_fc2 = weight_variable([4096,4096], 4096)
+        b_fc2 = bias_variable([4096])
+        h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop,w_fc2) + b_fc2)
         h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
     with tf.name_scope('fc3') as scope:
-        W_fc3 = weight_variable([1024, number_of_classes], 1024)
+        W_fc3 = weight_variable([4096, number_of_classes], 4096)
         b_fc3 = bias_variable([number_of_classes])
-        y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
+        # y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
 
     with tf.name_scope('softmax') as scope:
         y_conv = tf.nn.softmax(tf.matmul(h_fc2_drop, W_fc3) + b_fc3)
@@ -144,7 +143,7 @@ def inference(image_placeholder, keep_prob, resize_size, number_of_classes):
 
 def loss(logits, labels):
     cross_entropy = tf.reduce_mean(
-        -tf.reduce_sum(labels * tf.log(logits), reduction_indices=[1]))
+        -tf.reduce_sum(labels * tf.log(tf.clip_by_value(logits, 1e-10, 1.0))))
     tf.summary.scalar('cross_entropy', cross_entropy)
     return cross_entropy
 
@@ -168,7 +167,7 @@ def main():
     root_dir = os.path.abspath(('..')) + '/'
     train_data = root_dir + config['data']['TRAIN_LIST_PATH']
     param_chk.append((train_data, Param_check.EXIST_PATH))
-    test_data = root_dir + config['data']['VAL_LIST_PATH']
+    test_data = root_dir + config['data']['TEST_LIST_PATH']
     param_chk.append((test_data, Param_check.EXIST_PATH))
     data_dir = root_dir + config['data']['DATA_PATH']
     log_dir = root_dir + 'log/'
@@ -204,13 +203,7 @@ def main():
         # generate events.out.tfevents.. log files
         summary_writer = tf.summary.FileWriter(log_dir, sess.graph_def)
 
-        idx = np.array(list(range(train_images.shape[0])))
-
         for step in range(max_step):
-            np.random.shuffle(idx)
-            train_images = train_images[idx]
-            train_labels = train_labels[idx]
-
             for i in range(int(len(train_images)/ batch_size)):
                 batch = batch_size * i
                 point = sess.run(train_op, feed_dict={
@@ -244,10 +237,9 @@ def main():
     images_placeholder = tf.placeholder('float32', shape=(None, image_pixels))
     labels_placeholder = tf.placeholder('float32', shape=(None, number_of_classes))
     keep_prob = tf.placeholder('float32')
-    logits = inference(images_placeholder, keep_prob, resize_size, number_of_classes)
+    logits = inference(images_placeholder, keep_prob)
     sess = tf.InteractiveSession()
-    saver = tf.train.Saver()
-
+    saver = sess.run(tf.global_variables_initializer())
     hoge = sess.run(tf.global_variables_initializer())
     saver.restore(sess,"model.ckpt")
 

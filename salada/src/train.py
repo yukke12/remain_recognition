@@ -13,7 +13,6 @@ class Param_check(Enum):
     EXIST_PATH = 0
 
 
-
 def set_config(conf):
     config = configparser.ConfigParser()
     config.sections() # [section]
@@ -80,43 +79,44 @@ def inference(image_placeholder, keep_prob, resize_size, number_of_classes):
         W_conv1 = weight_variable([2, 2, 3, 32], resize_size[0] * resize_size[1])
         b_conv1 = bias_variable([32])
         h_conv1 = tf.nn.relu(conv2d_first(x_image, W_conv1) + b_conv1)
-        print(h_conv1)
+        tf.summary.histogram('W_conv1', W_conv1)
+        # print(h_conv1)
 
     with tf.name_scope('pool1') as scope:
         h_pool1 = max_pool_2x2(tf.nn.local_response_normalization(h_conv1))
-        print(h_pool1)
+        # print(h_pool1)
 
     with tf.name_scope('conv2') as scope:
         W_conv2 = weight_variable([2, 2, 32, 64], 96)
         b_conv2 = bias_variable([64])
         h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-        print(h_conv2)
+        # print(h_conv2)
 
     with tf.name_scope('pool2') as scope:
         h_pool2 = max_pool_2x2(tf.nn.local_response_normalization(h_conv2))
-        print(h_pool2)
+        # print(h_pool2)
 
     with tf.name_scope('conv3') as scope:
         W_conv3 = weight_variable([2, 2, 64, 64], 256)
         b_conv3 = bias_variable([64])
         h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
-        print(h_conv3)
+        # print(h_conv3)
 
     with tf.name_scope('conv4') as scope:
         W_conv4 = weight_variable([2, 2, 64, 64], 384)
         b_conv4 = bias_variable([64])
         h_conv4 = tf.nn.relu(conv2d(h_conv3, W_conv4) + b_conv4)
-        print(h_conv4)
+        # print(h_conv4)
 
     with tf.name_scope('conv5') as scope:
         W_conv5 = weight_variable([2, 2, 64, 64], 384)
         b_conv5 = bias_variable([64])
         h_conv5 = tf.nn.relu(conv2d(h_conv4, W_conv5) + b_conv5)
-        print(h_conv5)
+        # print(h_conv5)
 
     with tf.name_scope('pool3') as scope:
         h_pool3 = max_pool_2x2(h_conv5)
-        print(h_pool3)
+        # print(h_pool3)
 
     with tf.name_scope('fc1') as scope:
         n = np.prod(h_pool3.get_shape().as_list()[1:])
@@ -145,7 +145,7 @@ def inference(image_placeholder, keep_prob, resize_size, number_of_classes):
 def loss(logits, labels):
     cross_entropy = tf.reduce_mean(
         -tf.reduce_sum(labels * tf.log(logits), reduction_indices=[1]))
-    tf.summary.scalar('cross_entropy', cross_entropy)
+    tf.summary.scalar('cross_entropy', cross_entropy) # tensorboard display name
     return cross_entropy
 
 def training(loss, learning_rate):
@@ -153,7 +153,7 @@ def training(loss, learning_rate):
     return train_step
 
 def accuracy(logits, labels):
-    correct_prediction = tf.equal(tf.argmax(logits, 1), tf.arg_max(labels, 1))
+    correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(labels, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
     tf.summary.scalar('accuracy', accuracy)
     return accuracy
@@ -168,7 +168,8 @@ def main():
     root_dir = os.path.abspath(('..')) + '/'
     train_data = root_dir + config['data']['TRAIN_LIST_PATH']
     param_chk.append((train_data, Param_check.EXIST_PATH))
-    test_data = root_dir + config['data']['VAL_LIST_PATH']
+    test_data = root_dir + config['data']['TEST_LIST_PATH']
+    # test_data = root_dir + config['data']['VAL_LIST_PATH']
     param_chk.append((test_data, Param_check.EXIST_PATH))
     data_dir = root_dir + config['data']['DATA_PATH']
     log_dir = root_dir + 'log/'
@@ -198,12 +199,18 @@ def main():
         acc = accuracy(logits, labels_placeholder)
 
         saver = tf.train.Saver()
+        # saver = tf.train.Saver(max_to_keep=100) # save nearest 100 result
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
         summary_op = tf.summary.merge_all()
         # generate events.out.tfevents.. log files
-        summary_writer = tf.summary.FileWriter(log_dir, sess.graph_def)
+        # summary_writer = tf.summary.FileWriter(log_dir, sess.graph_def)
+        train_writer = tf.summary.FileWriter(log_dir + '/train/', sess.graph) # for training
+        test_writer  = tf.summary.FileWriter(log_dir + '/test/')              # for testing
 
+        save_path = '../model/'
+
+        # randomize each step
         idx = np.array(list(range(train_images.shape[0])))
 
         for step in range(max_step):
@@ -213,6 +220,10 @@ def main():
 
             for i in range(int(len(train_images)/ batch_size)):
                 batch = batch_size * i
+
+                # To display image at tensorboard
+                # tf.summary.image('train_image', tf.reshape(train_images[batch:batch+batch_size], [-1, image_x_size, image_y_size, 3]), 10)
+
                 point = sess.run(train_op, feed_dict={
                     images_placeholder: train_images[batch:batch+batch_size],
                     labels_placeholder: train_labels[batch:batch+batch_size],
@@ -231,25 +242,47 @@ def main():
                     labels_placeholder: train_labels,
                     keep_prob: 1.0
                 })
-                summary_writer.add_summary(summary_str, step)
+                train_writer.add_summary(summary_str, step)
+                # summary_writer.add_summary(summary_str, step)
 
+            test_accuracy = sess.run(acc, feed_dict={
+                images_placeholder: test_images,
+                labels_placeholder: test_labels,
+                keep_prob: 1.0
+            })
+            print('step %d, test accuracy %g' % (step, test_accuracy))
+
+            summary_str = sess.run(summary_op, feed_dict={
+                images_placeholder: test_images,
+                labels_placeholder: test_labels,
+                keep_prob: 1.0
+            })
+            test_writer.add_summary(summary_str, step)
+
+            saver.save(sess, save_path + 'model.ckpt', global_step=step) # model file path global_step mean attach the constant number.
+        """
         print ('test accuracy %g' % (sess.run(acc, feed_dict={
             images_placeholder: test_images,
             labels_placeholder: test_labels,
             keep_prob: 1.0
         })))
+        """
 
-        save_path = saver.save(sess, 'model.ckpt')
 
     images_placeholder = tf.placeholder('float32', shape=(None, image_pixels))
     labels_placeholder = tf.placeholder('float32', shape=(None, number_of_classes))
     keep_prob = tf.placeholder('float32')
     logits = inference(images_placeholder, keep_prob, resize_size, number_of_classes)
     sess = tf.InteractiveSession()
+
     saver = tf.train.Saver()
 
     hoge = sess.run(tf.global_variables_initializer())
-    saver.restore(sess,"model.ckpt")
+    if tf.train.get_checkpoint_state('../model/'):
+        # choise the last checkpoint file
+        ckpt = tf.train.get_checkpoint_state('../model/')
+        last_model = ckpt.model_checkpoint_path
+        saver.restore(sess, last_model)
 
     for i in range(len(test_images)):
         hoge = np.argmax(logits.eval(feed_dict={images_placeholder: [test_images[i]],keep_prob: 1.0 })[0])
